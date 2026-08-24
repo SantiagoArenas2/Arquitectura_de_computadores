@@ -1,104 +1,129 @@
-# Lab 4 — VetClinic: Index & Show Views
+# Proyecto 1 — Calculadora de 4 bits
 
-## Objective
+Arquitectura de Computadores · Universidad de los Andes · Semestre 2026-2
+Profesor: Jorge Gómez Mir
 
-In this lab, you will add controllers and views to display the data you created in Lab 3. By the end, users will be able to browse lists of records and view the details of each one. **No create/edit functionality yet** — this lab focuses exclusively on read-only pages.
+**Integrantes:**
+- [José Tomás Arévalo]
+- [Santiago Arenas]
+- [Danna Collazos]
 
-## Setup
+---
 
-In this lab you will continue working on the VetClinic application you built in Lab 3, but you must submit it in a **new repository**. Your Lab 3 repository will not be reviewed for this lab.
+## Descripción
 
-1. **Create a new, empty repository** on GitHub (no README, no .gitignore, no license — completely empty). Make sure it is **public** so the teaching assistant can review it.
+Calculadora de 4 bits con soporte para números negativos en complemento a dos,
+descrita en Verilog e implementada sobre una FPGA Lattice iCE40 HX1K
+(Nandland Go Board).
 
-2. In your local `vet_clinic` project from Lab 3, add the new repository as a remote and push your code:
+Toda la lógica combinacional está construida **exclusivamente con primitivas de
+compuerta** (`and`, `or`, `not`, `xor`, `nand`, `nor`, `xnor`, `buf`), sin usar
+operadores de alto nivel de Verilog.
+
+## Operaciones soportadas
+
+| Código  | Operación      | Resultado           |
+|---------|----------------|---------------------|
+| `3'b000`| Reinicio       | `R = 4'b0000`       |
+| `3'b001`| Suma           | `R = A + B`         |
+| `3'b010`| Resta          | `R = A - B`         |
+| `3'b011`| Resta inversa  | `R = B - A`         |
+| `3'b100`| Shift left     | `R = A << B[1:0]`   |
+| `3'b101`| Shift right    | `R = A >> B[1:0]`   |
+| `3'b110`| No usado       | `R = 4'b0000`       |
+| `3'b111`| No usado       | `R = 4'b0000`       |
+
+Todos los cálculos son de 4 bits. En caso de overflow se conservan únicamente
+los cuatro bits menos significativos.
+
+## Requisitos
+
+- [OSS CAD Suite](https://github.com/YosysHQ/oss-cad-suite-build) — incluye
+  Yosys, nextpnr-ice40, icepack, iceprog, Icarus Verilog y GTKWave.
+- GNU Make.
+- Nandland Go Board (solo para la implementación en hardware).
+
+Antes de correr cualquier comando hay que activar el entorno:
 
 ```bash
-cd vet_clinic
-git remote add lab4 <your-new-repo-url>
-git push -u lab4 main
+# Linux / macOS
+source <ruta>/oss-cad-suite/environment
+
+# Windows: ejecutar start.bat dentro de la carpeta oss-cad-suite
 ```
 
-3. Verify on GitHub that your code is now in the new repository.
+## Estructura del repositorio
 
-4. From now on, push your Lab 4 work to this new remote:
+```
+rtl/          Módulos del circuito (sintetizables)
+tb/           Testbenches (solo simulación)
+docs/         Informe en PDF
+build/        Archivos generados (no versionados)
+goboard.pcf   Asignación de pines de la Go Board
+Makefile      Automatización del flujo
+```
+
+## Cómo simular
 
 ```bash
-git push lab4 main
+make sim TB=tb_calc_core     # compila y ejecuta el testbench
+make wave TB=tb_calc_core    # abre las formas de onda en GTKWave
 ```
 
-5. **Submit the link to your new repository on Canvas.**
+Para probar otros módulos por separado, cambiar el valor de `TB`:
 
-## Instructions
+```bash
+make sim TB=tb_full_adder
+make sim TB=tb_alu4
+```
 
-### 1. Generate Controllers
+Los valores y operaciones a evaluar se modifican en el bloque `initial` de
+`tb/tb_calc_core.v`.
 
-Generate controllers for the following resources with `index` and `show` actions:
+## Cómo programar la FPGA
 
-- **Owners**
-- **Pets**
-- **Vets**
-- **Appointments**
+Con la Go Board conectada por USB:
 
-You do not need a controller for Treatments — they will be displayed within the Appointment show page.
+```bash
+make prog
+```
 
-### 2. Define Routes
+Esto ejecuta la cadena completa: síntesis con Yosys, place & route con
+nextpnr-ice40, generación del bitstream con icepack y grabado con iceprog.
 
-In `config/routes.rb`, define resourceful routes for each of the four resources, but limit them to only the `index` and `show` actions. Set the root path to the Owners index page.
+Comandos auxiliares:
 
-### 3. Index Views
+```bash
+make stats    # uso de recursos de la FPGA
+make clean    # borra los archivos generados
+```
 
-Create an index view for each resource that displays a table listing all records. Each table should include the most relevant columns for that entity:
+## Uso en la placa
 
-| Resource     | Columns to display                                      |
-|--------------|---------------------------------------------------------|
-| Owners       | Full name, email, phone, number of pets                 |
-| Pets         | Name, species, breed, owner name, date of birth         |
-| Vets         | Full name, email, specialization                        |
-| Appointments | Date, pet name, vet name, reason, status                |
+| Botón              | Función                                          |
+|--------------------|--------------------------------------------------|
+| Superior izquierdo | Incrementa el valor                              |
+| Inferior izquierdo | Disminuye el valor                               |
+| Superior derecho   | Confirma / ejecuta                               |
+| Inferior derecho   | Usa el resultado anterior como segundo operando  |
 
-Each row should include a link to the corresponding show page (e.g., clicking an owner's name takes you to their detail page).
+**Secuencia de operación:**
 
-### 4. Show Views
+1. Se ingresa el código de operación, que se muestra en los LEDs de la placa.
+2. Se ingresa el primer operando, visible en el display de siete segmentos
+   (display izquierdo: signo; display derecho: valor en hexadecimal).
+3. Se ingresa el segundo operando, o se presiona el botón inferior derecho para
+   reutilizar el resultado anterior.
+4. Al confirmar, la calculadora ejecuta la operación y muestra el resultado.
+5. Presionando nuevamente el botón superior derecho se vuelve al estado inicial.
 
-Create a show view for each resource that displays all of its attributes and its related records:
+## Informe
 
-**Owner show page**
-- Display all owner attributes (name, email, phone, address).
-- List all of the owner's pets with links to each pet's show page.
+El informe con el diseño general, las tablas de verdad, los mapas de Karnaugh,
+las expresiones booleanas y la implementación mediante compuertas se encuentra
+en [`docs/informe.pdf`](docs/informe.pdf).
 
-**Pet show page**
-- Display all pet attributes (name, species, breed, date of birth, weight).
-- Show the owner's name as a link to the owner's show page.
-- List all of the pet's appointments with links to each appointment's show page.
+## Referencias
 
-**Vet show page**
-- Display all vet attributes (name, email, phone, specialization).
-- List all of the vet's appointments with links to each appointment's show page.
-
-**Appointment show page**
-- Display all appointment attributes (date, reason, status).
-- Show the pet's name and the vet's name as links to their respective show pages.
-- List all treatments for this appointment, displaying: name, medication, dosage, administered at, and notes.
-
-### 5. Navigation
-
-Add a shared navigation bar (use a partial in `app/views/layouts/`) that includes links to each of the four index pages. The navigation bar should be visible on every page.
-
-Use Bootstrap to style the navigation bar and the rest of the application. You may use the Bootstrap CDN or install it via a gem.
-
-### 6. Formatting
-
-Apply the following formatting to improve readability:
-
-- Display dates in a human-friendly format (e.g., `March 15, 2026` instead of `2026-03-15`).
-- Display the appointment status as a word (e.g., "Scheduled", "Completed") instead of the raw integer value.
-- Use Bootstrap classes to style tables, links, and page layout.
-
-## Deliverables
-
-- Controllers with `index` and `show` actions for Owners, Pets, Vets, and Appointments.
-- Resourceful routes limited to `index` and `show`.
-- Index pages displaying tables of records with links to show pages.
-- Show pages displaying all attributes and related records with navigation between them.
-- A shared navigation bar linking to all index pages.
-- Bootstrap styling applied throughout the application.
+- Restricciones de pines adaptadas del
+  [Pochoco SoC](https://github.com/nic0villegasc/pochoco_soc) de Nicolás Villegas.
