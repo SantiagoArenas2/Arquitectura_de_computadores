@@ -1,0 +1,9 @@
+build/
+*.vvp
+*.vcd
+*.json
+*.asc
+*.bin
+oss-cad-suite/
+.vscode/
+Thumbs.db
