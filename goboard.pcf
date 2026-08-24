@@ -1,0 +1,41 @@
+# Nandland Go Board - Lattice iCE40 HX1K, package VQ100
+# Pines tomados de goboard.pcf del Pochoco SoC (UANDES 2026),
+# recortado a las senales que usa la calculadora de 4 bits.
+
+# Reloj: 25 MHz
+set_io i_Clk 15
+
+# LEDs: muestran el codigo de operacion
+set_io o_LED[0] 56
+set_io o_LED[1] 57
+set_io o_LED[2] 59
+set_io o_LED[3] 60
+
+# Botones (pulsadores, activos en alto, requieren debounce)
+#   i_Switch[0] -> superior izquierdo  : incrementar
+#   i_Switch[1] -> inferior izquierdo  : decrementar
+#   i_Switch[2] -> superior derecho    : confirmar / ejecutar
+#   i_Switch[3] -> inferior derecho    : usar resultado anterior como op2
+set_io i_Switch[0] 53
+set_io i_Switch[1] 51
+set_io i_Switch[2] 54
+set_io i_Switch[3] 52
+
+# Display 7 segmentos 1 (izquierdo): signo
+# Anodo comun -> los segmentos se encienden en BAJO
+set_io o_Segment1_A 3
+set_io o_Segment1_B 4
+set_io o_Segment1_C 93
+set_io o_Segment1_D 91
+set_io o_Segment1_E 90
+set_io o_Segment1_F 1
+set_io o_Segment1_G 2
+
+# Display 7 segmentos 2 (derecho): valor en hexadecimal
+set_io o_Segment2_A 100
+set_io o_Segment2_B 99
+set_io o_Segment2_C 97
+set_io o_Segment2_D 95
+set_io o_Segment2_E 94
+set_io o_Segment2_F 8
+set_io o_Segment2_G 96
