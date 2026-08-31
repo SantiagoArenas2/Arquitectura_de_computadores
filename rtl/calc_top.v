@@ -59,7 +59,8 @@ module calc_top (
     wire [2:0] opcode;
     wire [3:0] op1, op2;
     wire       sel_b, exec;
-    wire [3:0] disp_val;
+    wire [3:0] disp_val;    // valor con signo, tal como esta almacenado
+    wire [3:0] disp_mag;    // magnitud, para el display de valor
     wire [1:0] estado;
     wire [3:0] result;
 
@@ -128,8 +129,19 @@ module calc_top (
     buf u_led3 (o_LED[3], sel_b);
 
     // ===============================================================
+    // Conversion a magnitud para el display de valor
+    // ===============================================================
+    // Sin esto, el valor -4 (1100) apareceria como "-C" en el
+    // display en vez de "-4". Ver el modulo abs4.
+    abs4 u_abs (
+        .v   (disp_val),
+        .mag (disp_mag)
+    );
+
+    // ===============================================================
     // Display 1: signo
     // ===============================================================
+    // Recibe el valor CON signo, porque necesita el bit 3.
     sign_display u_signo (
         .v     (disp_val),
         .seg_a (o_Segment1_A),
@@ -142,10 +154,10 @@ module calc_top (
     );
 
     // ===============================================================
-    // Display 2: valor en hexadecimal
+    // Display 2: magnitud en hexadecimal
     // ===============================================================
     seg7_decoder u_valor (
-        .v     (disp_val),
+        .v     (disp_mag),
         .blank (1'b0),
         .seg_a (o_Segment2_A),
         .seg_b (o_Segment2_B),
